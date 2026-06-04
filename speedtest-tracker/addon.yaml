@@ -1,0 +1,49 @@
+# icon.png and logo.png are included in the add-on root folder
+# Home Assistant uses these files for add-on store and UI icons
+name: Speedtest Tracker
+description: A self-hosted application that monitors the performance and uptime of your internet connection
+url: https://github.com/iNoels/hassio-speedtest-tracker
+version: 1.0.0
+slug: speedtest-tracker
+image: ghcr.io/iNoels/speedtest-tracker-{arch}
+arch:
+  - amd64
+  - aarch64
+  - armv7
+init: false
+ports:
+  8000/tcp: 8000
+ports_description:
+  8000/tcp: "Speedtest Tracker Web Interface"
+environment:
+  LOG_LEVEL: info
+options:
+  app_port: 8000
+  app_key_length: 32
+  log_level: info
+schema:
+  app_port: int(min=1, max=65535)?
+  app_key_length: int(min=16, max=128)?
+  log_level: list(debug|info|notice|warning)?
+healthcheck:
+  test: curl --fail http://localhost:8000/api/health || exit 1
+  interval: 30s
+  timeout: 5s
+  retries: 3
+  start_period: 30s
+stages:
+  - pre
+  - startup
+  - want-upgrade
+startup: services
+boot: auto
+hassio_api: true
+hassio_role: admin
+docker_api: true
+privileged: []
+full_access: false
+homeassistant_api: false
+auth_api: false
+apparmor: default
+tmpfs: size=512mb
+timeout: 120
