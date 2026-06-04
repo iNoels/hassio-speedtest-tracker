@@ -1,0 +1,57 @@
+name: Weekly Rebuild with Pinned Upstream Digest
+on:
+  schedule:
+    # Weekly on Mondays at 03:00 UTC
+    - cron: '0 3 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  pin-and-rebuild:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine upstream digest
+        id: digest
+        run: |
+          REPO="linuxserver/speedtest-tracker"
+          # Get token
+          TOKEN=$(curl -s "https://auth.docker.io/token?service=registry.docker.io&scope=repository/${REPO}:pull" | sed -n 's/.*"token":"\([^"]*\)".*/\1/p')
+          if [ -z "$TOKEN" ]; then
+            echo "Could not fetch token" >&2
+            exit 1
+          fi
+          DIGEST=$(curl -s -I -H "Authorization: Bearer $TOKEN" -H "Accept: application/vnd.docker.distribution.manifest.v2+json" "https://registry-1.docker.io/v2/${REPO}/manifests/latest" | grep -i Docker-Content-Digest | awk '{print $2}' | tr -d '\r')
+          if [ -z "$DIGEST" ]; then
+            echo "Could not fetch digest" >&2
+            exit 1
+          fi
+          IMAGE="$REPO@$DIGEST"
+          echo "image=$IMAGE" >> $GITHUB_OUTPUT
+          echo "found image: $IMAGE"
+
+      - name: Read current BASE_IMAGE
+        id: current
+        run: |
+          if [ -f speedtest-tracker/BASE_IMAGE ]; then
+            echo "current=$(cat speedtest-tracker/BASE_IMAGE)" >> $GITHUB_OUTPUT
+          else
+            echo "current=none" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Update BASE_IMAGE and commit
+        if: steps.digest.outputs.image != steps.current.outputs.current
+        run: |
+          echo "Updating BASE_IMAGE to ${{ steps.digest.outputs.image }}"
+          echo "${{ steps.digest.outputs.image }}" > speedtest-tracker/BASE_IMAGE
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add speedtest-tracker/BASE_IMAGE
+          git commit -m "chore(ci): pin linuxserver/speedtest-tracker to ${{ steps.digest.outputs.image }}"
+          git push origin HEAD:main

@@ -1,0 +1,120 @@
+name: Build Add-on Docker Images
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'speedtest-tracker/**'
+      - '.github/workflows/build.yml'
+  pull_request:
+    paths:
+      - 'speedtest-tracker/**'
+  release:
+    types:
+      - published
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository_owner }}/speedtest-tracker
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        arch:
+          - amd64
+          - aarch64
+          - armv7
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Read BASE_IMAGE
+        id: base
+        run: |
+          if [ -f speedtest-tracker/BASE_IMAGE ]; then
+            echo "base_image=$(cat speedtest-tracker/BASE_IMAGE)" >> $GITHUB_OUTPUT
+          else
+            echo "base_image=linuxserver/speedtest-tracker:latest" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-${{ matrix.arch }}
+          tags: |
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./speedtest-tracker
+          platforms: |
+            ${{ matrix.arch == 'amd64' && 'linux/amd64' || '' }}
+            ${{ matrix.arch == 'aarch64' && 'linux/arm64' || '' }}
+            ${{ matrix.arch == 'armv7' && 'linux/arm/v7' || '' }}
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            BASE_IMAGE=${{ steps.base.outputs.base_image }}
+
+  test-install:
+    needs: build
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Validate addon.yaml
+        run: |
+          # Check if addon.yaml exists and is valid YAML
+          if [ ! -f "speedtest-tracker/addon.yaml" ]; then
+            echo "ERROR: addon.yaml not found"
+            exit 1
+          fi
+          echo "✓ addon.yaml found"
+
+      - name: Validate config.json
+        run: |
+          # Check if config.json is valid JSON
+          if [ ! -f "speedtest-tracker/config.json" ]; then
+            echo "ERROR: config.json not found"
+            exit 1
+          fi
+          python -m json.tool speedtest-tracker/config.json > /dev/null
+          echo "✓ config.json is valid"
+
+      - name: Validate repository.json
+        run: |
+          # Check if repository.json is valid JSON
+          if [ ! -f "repository.json" ]; then
+            echo "ERROR: repository.json not found"
+            exit 1
+          fi
+          python -m json.tool repository.json > /dev/null
+          echo "✓ repository.json is valid"
