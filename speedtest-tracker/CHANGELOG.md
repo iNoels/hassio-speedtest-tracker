@@ -7,7 +7,7 @@ All notable changes to this add-on are documented in this file.
 ### Added
 
 - Initial release of Speedtest Tracker add-on for Home Assistant
-- Support for amd64, aarch64, and armv7 architectures
+- Support for amd64 and aarch64 architectures
 - Web interface accessible on port 8000
 - Configurable app port, key length, and log level
 - Health check monitoring

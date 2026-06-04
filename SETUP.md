@@ -185,7 +185,7 @@ To push Docker images to `ghcr.io`:
 Images will be pushed to:
 - `ghcr.io/iNoels/speedtest-tracker-amd64`
 - `ghcr.io/iNoels/speedtest-tracker-aarch64`
-- `ghcr.io/iNoels/speedtest-tracker-armv7`
+
 
 ## Creating a Release
 

@@ -7,8 +7,7 @@
   "image": "ghcr.io/iNoels/speedtest-tracker-{arch}",
   "arch": [
     "amd64",
-    "aarch64",
-    "armv7"
+    "aarch64"
   ],
   "ports": {
     "8000/tcp": 8000

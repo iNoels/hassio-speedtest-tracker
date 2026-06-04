@@ -28,7 +28,6 @@ jobs:
         arch:
           - amd64
           - aarch64
-          - armv7
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -75,7 +74,6 @@ jobs:
           platforms: |
             ${{ matrix.arch == 'amd64' && 'linux/amd64' || '' }}
             ${{ matrix.arch == 'aarch64' && 'linux/arm64' || '' }}
-            ${{ matrix.arch == 'armv7' && 'linux/arm/v7' || '' }}
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

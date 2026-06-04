@@ -26,7 +26,6 @@ This is the official Home Assistant Add-on repository for [Speedtest Tracker](ht
 
 - ✅ amd64 (Intel/AMD 64-bit)
 - ✅ aarch64 (ARM 64-bit / Raspberry Pi 4+)
-- ✅ armv7 (ARM 32-bit / Raspberry Pi 3+)
 
 ## Requirements
 
