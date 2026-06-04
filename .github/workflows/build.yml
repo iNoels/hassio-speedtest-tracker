@@ -39,7 +39,7 @@ jobs:
           if [ -f speedtest-tracker/BASE_IMAGE ]; then
             echo "base_image=$(cat speedtest-tracker/BASE_IMAGE)" >> $GITHUB_OUTPUT
           else
-            echo "base_image=linuxserver/speedtest-tracker:latest" >> $GITHUB_OUTPUT
+            echo "base_image=lscr.io/linuxserver/speedtest-tracker:latest" >> $GITHUB_OUTPUT
           fi
 
       - name: Set up QEMU

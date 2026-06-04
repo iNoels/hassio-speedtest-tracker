@@ -1,5 +1,6 @@
 # Allow overriding the base image via build-arg for pinned digests
-ARG BASE_IMAGE=linuxserver/speedtest-tracker:latest
+# Default to lscr.io (LinuxServer registry) instead of Docker Hub
+ARG BASE_IMAGE=lscr.io/linuxserver/speedtest-tracker:latest
 FROM ${BASE_IMAGE}
 
 # Copy custom startup script

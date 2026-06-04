@@ -20,19 +20,14 @@ jobs:
       - name: Determine upstream digest
         id: digest
         run: |
-          REPO="linuxserver/speedtest-tracker"
-          # Get token
-          TOKEN=$(curl -s "https://auth.docker.io/token?service=registry.docker.io&scope=repository/${REPO}:pull" | sed -n 's/.*"token":"\([^"]*\)".*/\1/p')
-          if [ -z "$TOKEN" ]; then
-            echo "Could not fetch token" >&2
-            exit 1
-          fi
-          DIGEST=$(curl -s -I -H "Authorization: Bearer $TOKEN" -H "Accept: application/vnd.docker.distribution.manifest.v2+json" "https://registry-1.docker.io/v2/${REPO}/manifests/latest" | grep -i Docker-Content-Digest | awk '{print $2}' | tr -d '\r')
+          REPO_PATH="linuxserver/speedtest-tracker"
+          # Query lscr.io (LinuxServer registry) for the manifest digest
+          DIGEST=$(curl -s -I -H "Accept: application/vnd.docker.distribution.manifest.v2+json" "https://lscr.io/v2/${REPO_PATH}/manifests/latest" | grep -i Docker-Content-Digest | awk '{print $2}' | tr -d '\r')
           if [ -z "$DIGEST" ]; then
-            echo "Could not fetch digest" >&2
+            echo "Could not fetch digest from lscr.io" >&2
             exit 1
           fi
-          IMAGE="$REPO@$DIGEST"
+          IMAGE="lscr.io/${REPO_PATH}@${DIGEST}"
           echo "image=$IMAGE" >> $GITHUB_OUTPUT
           echo "found image: $IMAGE"
 
